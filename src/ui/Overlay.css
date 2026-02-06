@@ -1,0 +1,94 @@
+.overlay-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+  color: white;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+}
+
+.header-stats {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  align-self: flex-start;
+}
+
+.stat-item label { font-size: 10px; color: #aaa; display: block; margin-bottom: 4px; }
+.stat-item span { font-size: 20px; font-weight: bold; }
+.highlight { color: #ffd700; border-left: 2px solid #ffd700; padding-left: 15px; }
+
+.buy-tokens-btn {
+  background: transparent;
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.game-controls {
+  pointer-events: auto;
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 350px;
+}
+
+.config-box {
+  background: rgba(0,0,0,0.85);
+  padding: 25px;
+  border-radius: 15px;
+  border: 1px solid #333;
+}
+
+.input-group { margin-bottom: 20px; }
+.input-group label { font-size: 11px; letter-spacing: 1px; color: #888; display: block; margin-bottom: 10px; }
+.input-group input { width: 100%; background: #111; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; }
+
+.ammo-display { font-size: 24px; color: #ff4444; letter-spacing: 5px; margin-top: 10px; }
+
+.info-row { display: flex; justify-content: space-between; font-size: 13px; color: #ccc; border-top: 1px solid #333; pt: 15px; }
+
+.shoot-btn {
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(255, 68, 68, 0.3);
+  transition: 0.2s;
+}
+
+.shoot-btn:hover:not(:disabled) { transform: translateY(-3px); background: #ff5555; }
+.shoot-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.overlay-connect {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle, #222 0%, #000 100%);
+}
+
+.connect-btn {
+  padding: 20px 40px;
+  font-size: 20px;
+  background: #ffd700;
+  border: none;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+}
