@@ -30,14 +30,24 @@ export function Model(props) {
   const BULLET_Z_OFFSET = 0.25           
   const MUZZLE_POSITION = [-8.5, 5.2, 1.1]
 
-  const drumPosition = useMemo(() => {
-    const mesh = gun.nodes[drumName]
-    if (!mesh) return new THREE.Vector3()
+  const drumData = useMemo(() => {
+    const mesh = gun.nodes[drumName].clone()
+    mesh.geometry = mesh.geometry.clone()
+    
     mesh.geometry.computeBoundingBox()
     const center = new THREE.Vector3()
     mesh.geometry.boundingBox.getCenter(center)
-    mesh.geometry.center() 
-    return center
+    
+    mesh.geometry.translate(-center.x, -center.y, -center.z)
+    
+    const worldPos = gun.nodes[drumName].position.clone().add(center)
+    
+    return {
+      geometry: mesh.geometry,
+      material: mesh.material,
+      position: worldPos,
+      localCenter: center
+    }
   }, [gun.nodes])
 
   const bulletMesh = useMemo(() => {
@@ -63,13 +73,13 @@ export function Model(props) {
       setShowBullets(true)
       gsap.set([drumRef.current.rotation, bulletsGroupRef.current.rotation], { x: 0 })
       
-      tl.to(drumGroupRef.current.position, { z: drumPosition.z + 1.2, duration: 0.6, ease: "power2.out" })
+      tl.to(drumGroupRef.current.position, { z: drumData.position.z + 1.2, duration: 0.6, ease: "power2.out" })
       
       const bulletsToLoad = Math.min(ammo, 6)
       for (let i = 0; i < bulletsToLoad; i++) {
         const currentRotation = (i * Math.PI * 2) / 6
         tl.fromTo(bulletsRef.current[i].position, 
-          { x: Math.sin(currentRotation) * 2, y: Math.cos(currentRotation) * 2, z: BULLET_Z_OFFSET }, 
+          { x: Math.sin(currentRotation) * 2, y: Math.cos(currentRotation) * 2, z: BULLET_Z_OFFSET + 0.5 }, 
           { 
             x: Math.sin(currentRotation) * BULLET_RADIUS,
             y: Math.cos(currentRotation) * BULLET_RADIUS,
@@ -86,7 +96,7 @@ export function Model(props) {
       }
       
       tl.to(drumGroupRef.current.position, { 
-        z: drumPosition.z, 
+        z: drumData.position.z, 
         duration: 0.5,
         onStart: () => setShowBullets(false) 
       })
@@ -96,19 +106,21 @@ export function Model(props) {
         ease: "power4.inOut" 
       })
     }
-  }, [isAnimating])
+  }, [isAnimating, drumData])
 
   useEffect(() => {
-    if (gameState === 'RESULT' && store.lastResult === 'WIN' && recoilGroupRef.current) {
-      gsap.to(recoilGroupRef.current.rotation, { z: -0.05, duration: 0.05, yoyo: true, repeat: 1 });
-      gsap.to([drumRef.current.rotation, bulletsGroupRef.current.rotation], { x: "-=" + (Math.PI * 2 / 6), duration: 0.1 });
-    }
-    if (gameState === 'RESULT' && store.lastResult === 'LOSE' && recoilGroupRef.current) {
-      if (flashRef.current) gsap.fromTo(flashRef.current.scale, { x: 0, y: 0, z: 0 }, { x: 1.5, y: 2, z: 1.5, duration: 0.05, yoyo: true, repeat: 1 });
-      if (lightRef.current) gsap.fromTo(lightRef.current, { intensity: 15 }, { intensity: 0, duration: 0.15 });
-      gsap.timeline()
-        .to(recoilGroupRef.current.rotation, { z: -Math.PI / 3, duration: 0.08, ease: "power4.out" })
-        .to(recoilGroupRef.current.rotation, { z: 0, duration: 0.6, ease: "back.out(2)" });
+    if (gameState === 'RESULT' && recoilGroupRef.current) {
+      if (store.lastResult === 'WIN') {
+        gsap.to(recoilGroupRef.current.rotation, { z: -0.05, duration: 0.05, yoyo: true, repeat: 1 });
+        gsap.to([drumRef.current.rotation, bulletsGroupRef.current.rotation], { x: "-=" + (Math.PI * 2 / 6), duration: 0.1 });
+      } else if (store.lastResult === 'LOSE') {
+        if (flashRef.current) gsap.fromTo(flashRef.current.scale, { x: 0, y: 0, z: 0 }, { x: 1.5, y: 2, z: 1.5, duration: 0.05, yoyo: true, repeat: 1 });
+        if (lightRef.current) gsap.fromTo(lightRef.current, { intensity: 15 }, { intensity: 0, duration: 0.15 });
+        gsap.timeline()
+          .to(recoilGroupRef.current.rotation, { z: -Math.PI / 3, duration: 0.08, ease: "power4.out" })
+          .to(recoilGroupRef.current.rotation, { z: 0, duration: 0.6, ease: "back.out(2)" });
+        gsap.to([drumRef.current.rotation, bulletsGroupRef.current.rotation], { x: "-=" + (Math.PI * 2 / 6), duration: 0.1 });
+      }
     }
   }, [gameState, store.lastResult]);
 
@@ -128,8 +140,13 @@ export function Model(props) {
               ))}
             </group>
           </group>
-          <group ref={drumGroupRef} position={[drumPosition.x, drumPosition.y, drumPosition.z]}>
-            <mesh ref={drumRef} geometry={gun.nodes[drumName].geometry} material={gun.nodes[drumName].material} />
+
+          <group ref={drumGroupRef} position={[drumData.position.x, drumData.position.y, drumData.position.z]}>
+            <mesh 
+              ref={drumRef} 
+              geometry={drumData.geometry} 
+              material={drumData.material} 
+            />
             <group ref={bulletsGroupRef}>
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <group key={i} ref={(el) => (bulletsRef.current[i] = el)} visible={showBullets && i < visibleCount}>
@@ -140,6 +157,7 @@ export function Model(props) {
               ))}
             </group>
           </group>
+
           {Object.keys(gun.nodes).map((name) => {
             const node = gun.nodes[name]
             if (!node.isMesh || name === drumName || name.includes('kogel')) return null

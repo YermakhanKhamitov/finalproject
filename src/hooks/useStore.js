@@ -2,40 +2,32 @@ import { create } from "zustand";
 
 export const useStore = create((set) => ({
   account: null,
-  signer: null,
-  ethBalance: "0",
   tokenBalance: "0",
   gameState: "LOBBY",
   ammo: 1,
   bet: 10,
-  isAnimating: false,
   lastResult: null,
+  isAnimating: false,
+  isLoaded: false,
 
-  setAccount: (acc, signer) => set({ account: acc, signer }),
-  setBalances: (eth, tokens) => set({ ethBalance: eth, tokenBalance: tokens }),
-  setGameState: (state) => set({ gameState: state }),
+  setAccount: (acc) => set({ account: acc }),
+  setBalances: (eth, tokens) => set({ tokenBalance: tokens }),
   setAmmo: (val) => set({ ammo: Number(val) }),
   setBet: (val) => set({ bet: val }),
   
-  playAnimation: () => set({ isAnimating: true, gameState: "ANIMATING", lastResult: null }),
+  startLoad: () => set({ isAnimating: true, isLoaded: false }),
+  finishAnimation: () => set({ isAnimating: false, isLoaded: true }),
   
-  winRound: () => set({ 
-    isAnimating: false, 
+  setResult: (isWin) => set({ 
     gameState: "RESULT", 
-    lastResult: "WIN" 
-  }),
-  
-  loseGame: () => set({ 
-    isAnimating: false, 
-    gameState: "RESULT", 
-    lastResult: "LOSE" 
+    lastResult: isWin ? "WIN" : "LOSE",
+    isLoaded: false 
   }),
 
-  finishAnimation: () => set({ isAnimating: false }),
-
-  resetToLobby: () => set({ 
+  reset: () => set({ 
     gameState: "LOBBY", 
     lastResult: null, 
-    isAnimating: false 
+    isAnimating: false, 
+    isLoaded: false 
   })
 }));

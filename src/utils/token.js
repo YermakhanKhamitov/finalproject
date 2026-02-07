@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 
-export const TOKEN_ADDRESS = "0x882245A31e17e3Ab144ecBEBe503E019D950d45F";
+export const TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS;
 
 export const TOKEN_ABI = [
   "function balanceOf(address) view returns (uint256)",

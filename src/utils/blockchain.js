@@ -1,43 +1,47 @@
 import { ethers } from "ethers";
-import TokenData from "../abi/BulletToken.json";
-import RouletteData from "../abi/Roulette.json";
 
-export const TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS;
-export const ROULETTE_ADDRESS = import.meta.env.VITE_ROULETTE_ADDRESS;
+export const TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS || "";
+export const ROULETTE_ADDRESS = import.meta.env.VITE_ROULETTE_ADDRESS || "";
+export const CROWDFUNDING_ADDRESS = import.meta.env.VITE_CROWDFUNDING_ADDRESS || "";
 
-export const getProvider = () => {
-  if (!window.ethereum) throw new Error("Install MetaMask");
-  return new ethers.BrowserProvider(window.ethereum);
-};
+export const TOKEN_ABI = [
+  "function balanceOf(address) view returns (uint256)",
+  "function buyTokens() payable",
+  "function approve(address,uint256)"
+];
 
-export const getContract = async (address, abi, withSigner = false) => {
-  const provider = getProvider();
-  if (withSigner) {
-    const signer = await provider.getSigner();
-    return new ethers.Contract(address, abi, signer);
+export const ROULETTE_ABI = [
+  "function play(uint256 betAmount, uint256 ammo) external",
+  "function spinCylinder() external",
+  "event GamePlayed(address indexed player, uint256 bet, uint256 ammo, bool win, uint256 result)"
+];
+
+export const buyTokensAndApprove = async (tokenContract, amountETH, spenderAddress) => {
+  try {
+    const txBuy = await tokenContract.buyTokens({ value: ethers.parseEther(amountETH) });
+    await txBuy.wait();
+    const txApprove = await tokenContract.approve(spenderAddress, ethers.MaxUint256);
+    await txApprove.wait();
+    return true;
+  } catch (error) {
+    throw error; 
   }
-  return new ethers.Contract(address, abi, provider);
 };
 
-export const buyTokensAndApprove = async (ethAmount) => {
-  const token = await getContract(TOKEN_ADDRESS, TokenData.abi, true);
-  const val = ethers.parseEther(ethAmount.toString());
-  
-  const buyTx = await token.buyTokens({ value: val });
-  await buyTx.wait();
-  
-  const appTx = await token.approve(ROULETTE_ADDRESS, ethers.MaxUint256);
-  await appTx.wait();
-  
-  return { buyTx, appTx };
+export const playRoulette = async (rouletteContract, betAmount, ammo) => {
+  try {
+    const amount = ethers.parseUnits(betAmount.toString(), 18);
+    const tx = await rouletteContract.play(amount, ammo);
+    return await tx.wait();
+  } catch (error) {
+    if (error.code === "ACTION_REJECTED" || error.code === 4001) {
+      throw new Error("You rejected transaction");
+    }
+    throw error;
+  }
 };
 
-export const playRoulette = async (betAmount, ammoCount) => {
-  const roulette = await getContract(ROULETTE_ADDRESS, RouletteData.abi, true);
-  const betInWei = ethers.parseUnits(betAmount.toString(), 18);
-  
-  const tx = await roulette.play(betInWei, ammoCount, {
-    gasLimit: 300000 
-  });
-  return await tx.wait();
+export const getContract = (address, abi, signer) => {
+  if (!address || !signer) return null;
+  return new ethers.Contract(address, abi, signer);
 };
